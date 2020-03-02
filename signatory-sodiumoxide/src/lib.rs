@@ -14,7 +14,7 @@ extern crate signatory;
 
 use signatory::{
     ed25519,
-    public_key::PublicKeyed,
+    public_key::{KeyImage, PublicKeyed},
     signature::{Error, Signature, Signer, Verifier},
 };
 use sodiumoxide::crypto::sign::ed25519::{self as sodiumoxide_ed25519, SecretKey};
@@ -40,7 +40,7 @@ impl<'a> From<&'a ed25519::Seed> for Ed25519Signer {
 }
 
 impl PublicKeyed<ed25519::PublicKey> for Ed25519Signer {
-    fn public_key(&self) -> Result<ed25519::PublicKey, Error> {
+    fn public_key(&self, _key_image: KeyImage) -> Result<ed25519::PublicKey, Error> {
         Ok(self.public_key)
     }
 }

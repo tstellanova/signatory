@@ -20,7 +20,7 @@ extern crate signatory;
 use sha2::Sha512;
 use signatory::{
     ed25519,
-    public_key::PublicKeyed,
+    public_key::{KeyImage, PublicKeyed},
     signature::{DigestSigner, DigestVerifier, Error, Signature, Signer, Verifier},
 };
 
@@ -35,7 +35,7 @@ impl<'a> From<&'a ed25519::Seed> for Ed25519Signer {
 }
 
 impl PublicKeyed<ed25519::PublicKey> for Ed25519Signer {
-    fn public_key(&self) -> Result<ed25519::PublicKey, Error> {
+    fn public_key(&self, _key_image: KeyImage) -> Result<ed25519::PublicKey, Error> {
         Ok(ed25519::PublicKey::from_bytes(self.0.public.as_bytes()).unwrap())
     }
 }

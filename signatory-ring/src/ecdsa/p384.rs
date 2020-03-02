@@ -14,7 +14,7 @@ use signatory::{
         self,
         pkcs8::{self, FromPkcs8, GeneratePkcs8},
     },
-    public_key::PublicKeyed,
+    public_key::{KeyImage, PublicKeyed},
     signature::{self, Signature},
 };
 
@@ -75,7 +75,7 @@ where
     S: Signature + Send + Sync,
 {
     /// Obtain the public key which identifies this signer
-    fn public_key(&self) -> Result<PublicKey, signature::Error> {
+    fn public_key(&self, _key_image: KeyImage) -> Result<PublicKey, signature::Error> {
         PublicKey::from_bytes(self.0.public_key()).ok_or_else(signature::Error::new)
     }
 }
@@ -128,7 +128,7 @@ mod tests {
             test_vectors::nistp384::SHA384_FIXED_SIZE_TEST_VECTORS,
         },
         encoding::FromPkcs8,
-        public_key::PublicKeyed,
+        public_key::{KeyImage, PublicKeyed},
         signature::{Signature as _, Signer as _, Verifier as _},
         test_vector::{TestVectorAlgorithm, ToPkcs8},
     };
@@ -141,7 +141,7 @@ mod tests {
         let signer = Signer::from_pkcs8(&vector.to_pkcs8(TestVectorAlgorithm::NistP384)).unwrap();
         let signature: Asn1Signature = signer.sign(vector.msg);
 
-        let verifier = Verifier::from(&signer.public_key().unwrap());
+        let verifier = Verifier::from(&signer.public_key(KeyImage::Compressed).unwrap());
         assert!(verifier.verify(vector.msg, &signature).is_ok());
     }
 
@@ -154,7 +154,7 @@ mod tests {
         let mut tweaked_signature = signature.as_ref().to_vec();
         *tweaked_signature.iter_mut().last().unwrap() ^= 42;
 
-        let verifier = Verifier::from(&signer.public_key().unwrap());
+        let verifier = Verifier::from(&signer.public_key(KeyImage::Compressed).unwrap());
         let result = verifier.verify(
             vector.msg,
             &Asn1Signature::from_bytes(tweaked_signature).unwrap(),
@@ -172,13 +172,13 @@ mod tests {
             let signer =
                 Signer::from_pkcs8(&vector.to_pkcs8(TestVectorAlgorithm::NistP384)).unwrap();
             let public_key = PublicKey::from_untagged_point(&GenericArray::from_slice(vector.pk));
-            assert_eq!(signer.public_key().unwrap(), public_key);
+            assert_eq!(signer.public_key(KeyImage::Compressed).unwrap(), public_key);
 
             // Compute a signature with a random `k`
             // TODO: test deterministic `k`
             let signature: FixedSignature = signer.sign(vector.msg);
 
-            let verifier = Verifier::from(&signer.public_key().unwrap());
+            let verifier = Verifier::from(&signer.public_key(KeyImage::Compressed).unwrap());
             assert!(verifier.verify(vector.msg, &signature).is_ok());
 
             // Make sure the vector signature verifies
@@ -200,7 +200,7 @@ mod tests {
         let mut tweaked_signature = signature.as_ref().to_vec();
         *tweaked_signature.iter_mut().last().unwrap() ^= 42;
 
-        let verifier = Verifier::from(&signer.public_key().unwrap());
+        let verifier = Verifier::from(&signer.public_key(KeyImage::Compressed).unwrap());
         let result = verifier.verify(
             vector.msg,
             &FixedSignature::from_bytes(tweaked_signature).unwrap(),
@@ -220,7 +220,7 @@ mod tests {
             let fixed_signature: FixedSignature = signer.sign(vector.msg);
 
             let asn1_signature = Asn1Signature::from(&fixed_signature);
-            let verifier = Verifier::from(&signer.public_key().unwrap());
+            let verifier = Verifier::from(&signer.public_key(KeyImage::Compressed).unwrap());
             assert!(verifier.verify(vector.msg, &asn1_signature).is_ok());
         }
     }

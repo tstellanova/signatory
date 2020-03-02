@@ -10,7 +10,7 @@
 use ledger_tendermint::ledgertm::TendermintValidatorApp;
 use signatory::{
     ed25519::{PublicKey, Signature},
-    public_key::PublicKeyed,
+    public_key::{KeyImage, PublicKeyed},
     signature::{Error, Signer},
 };
 use std::sync::{Arc, Mutex};
@@ -26,16 +26,18 @@ impl Ed25519LedgerTmAppSigner {
         let validator_app = TendermintValidatorApp::connect().map_err(Error::from_source)?;
         let app = Arc::new(Mutex::new(validator_app));
         let signer = Ed25519LedgerTmAppSigner { app };
-        let _pk = signer.public_key().unwrap();
+        let _pk = signer.public_key(KeyImage::Compressed).unwrap();
         Ok(signer)
     }
 }
 
 impl PublicKeyed<PublicKey> for Ed25519LedgerTmAppSigner {
     /// Returns the public key that corresponds to the Tendermint Validator app connected to this signer
-    fn public_key(&self) -> Result<PublicKey, Error> {
+    fn public_key(&self, _key_image: KeyImage) -> Result<PublicKey, Error> {
         let app = self.app.lock().unwrap();
-        let pk = app.public_key().map_err(Error::from_source)?;
+        let pk = app
+            .public_key(KeyImage::Compressed)
+            .map_err(Error::from_source)?;
         Ok(PublicKey(pk))
     }
 }
@@ -58,7 +60,7 @@ mod tests {
         use signatory::public_key::PublicKeyed;
         let signer = Ed25519LedgerTmAppSigner::connect().unwrap();
 
-        let _pk = signer.public_key().unwrap();
+        let _pk = signer.public_key(KeyImage::Compressed).unwrap();
         println!("PK {:0X?}", _pk);
     }
 
@@ -124,14 +126,14 @@ mod tests {
 
     #[test]
     fn sign_many() {
-        use signatory::public_key::PublicKeyed;
+        use signatory::public_key::{KeyImage, PublicKeyed};
         use signatory::signature::Signer;
         use Ed25519LedgerTmAppSigner;
 
         let signer = Ed25519LedgerTmAppSigner::connect().unwrap();
 
         // Get public key to initialize
-        let _pk = signer.public_key().unwrap();
+        let _pk = signer.public_key(KeyImage::Compressed).unwrap();
         println!("PK {:0X?}", _pk);
 
         for index in 50u8..254u8 {

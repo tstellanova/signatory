@@ -12,7 +12,7 @@ use signatory::{
         self,
         pkcs8::{self, FromPkcs8, GeneratePkcs8},
     },
-    public_key::PublicKeyed,
+    public_key::{KeyImage, PublicKeyed},
     signature::{self, Signature as _},
 };
 
@@ -47,7 +47,7 @@ impl GeneratePkcs8 for Signer {
 }
 
 impl PublicKeyed<PublicKey> for Signer {
-    fn public_key(&self) -> Result<PublicKey, signature::Error> {
+    fn public_key(&self, _key_image: KeyImage) -> Result<PublicKey, signature::Error> {
         Ok(PublicKey::from_bytes(self.0.public_key()).unwrap())
     }
 }
